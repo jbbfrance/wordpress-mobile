@@ -519,8 +519,17 @@ class WP_Webhooks_Pro_Webhook {
 			die();
 		}
 
-		$action = WPWHPRO()->helpers->validate_request_value( $response_body['content'], 'action' );
-		
+		// Add specific hidden fields of Typeform
+		if(
+				property_exists($response_body['content'], 'form_response') &&
+				property_exists($response_body['content']->form_response, 'hidden') &&
+				property_exists($response_body['content']->form_response->hiddent, 'action')
+			) {
+			$action = WPWHPRO()->helpers->validate_request_value( $response_body['content']->form_response->hidden, 'action' );
+		} else {
+			$action = WPWHPRO()->helpers->validate_request_value( $response_body['content'], 'action' );
+		}
+
 		if( empty( $action ) ){
 			if( ! empty( $_REQUEST['action'] ) ){
 				$action = sanitize_title( $_REQUEST['action'] );

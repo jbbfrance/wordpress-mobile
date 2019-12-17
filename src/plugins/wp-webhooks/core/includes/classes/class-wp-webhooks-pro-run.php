@@ -147,7 +147,7 @@ class WP_Webhooks_Pro_Run{
 		$url_parts              = parse_url( $webhook_current_url );
 		parse_str($url_parts['query'], $query_params);
 		$clean_url              = strtok( $webhook_current_url, '?' );
-		
+
 		if( ! empty( $webhook_slug ) ){
 			$new_webhook = $webhook_slug;
 		} else {
@@ -171,7 +171,7 @@ class WP_Webhooks_Pro_Run{
         echo json_encode( $response );
 		die();
 	}
-	
+
 	/**
 	 * Handler for creating a new webhook action url
 	 *
@@ -187,7 +187,7 @@ class WP_Webhooks_Pro_Run{
 		//Sanitize webhook slug properly
 		$webhook_slug = str_replace( '§', '', $webhook_slug );
 		$webhook_slug = sanitize_title( $webhook_slug );
-		
+
 		if( ! isset( $webhooks[ $webhook_slug ] ) ){
 			WPWHPRO()->webhook->create( $webhook_slug, 'action' );
 
@@ -226,7 +226,7 @@ class WP_Webhooks_Pro_Run{
         echo json_encode( $response );
 		die();
 	}
-	
+
 	/*
      * Remove the action via ajax
      */
@@ -244,7 +244,7 @@ class WP_Webhooks_Pro_Run{
         echo json_encode( $response );
 		die();
 	}
-	
+
 	/*
      * Change the status of the action via ajax
      */
@@ -279,7 +279,7 @@ class WP_Webhooks_Pro_Run{
 					'status' => $new_status
 				) );
 			}
-			
+
 			if( $check ){
 				$response['success'] = true;
 				$response['new_status'] = $new_status;
@@ -562,6 +562,9 @@ class WP_Webhooks_Pro_Run{
 		$actions[] = $this->action_get_posts_content();
 		$actions[] = $this->action_get_post_content();
 
+		//Typeform actions
+		$actions[] = $this->action_create_event_content();
+
 		//Testing actions
 		$actions[] = $this->action_ironikus_test_content();
 
@@ -629,6 +632,10 @@ class WP_Webhooks_Pro_Run{
 					$this->action_get_post();
 				}
 				break;
+			case 'create_event':
+				if( isset( $available_triggers['create_event'] ) ){
+					$this->action_create_event();
+				}
 			case 'ironikus_test':
 				if( isset( $available_triggers['ironikus_test'] ) ){
 					$this->action_ironikus_test();
@@ -1158,6 +1165,52 @@ post_tag,custom_taxonomy_1,custom_taxonomy_2
 	}
 
 	/*
+	 * The core logic to create a event with Typeform
+	 */
+	public function action_create_event_content(){
+
+	  $parameter = array(
+	    'event_id'      => array( 'required' => true, 'short_description' => WPWHPRO()->helpers->translate( 'The event id of your specified form. This field is required.', 'action_create_event_content' ) )
+	  );
+
+	  $returns = array(
+	    'success'        => array( 'short_description' => WPWHPRO()->helpers->translate( '(Bool) True if the action was successful, false if not. E.g. array( \'success\' => true )', 'action_create_event_content' ) ),
+	    'data'        => array( 'short_description' => WPWHPRO()->helpers->translate( '(array) Form related data as an array. We return the event id with the event type', 'action_create_event_content' ) ),
+	    'msg'        => array( 'short_description' => WPWHPRO()->helpers->translate( '(string) A message with more information about the current request. E.g. array( \'msg\' => "This action was successful." )', 'action_create_event_content' ) ),
+	  );
+
+	  ob_start();
+	  ?>
+	      <pre>
+	$return_args = array(
+	  'success' => false,
+	  'msg' => '',
+	  'data' => array(
+	      'event_id' => 0
+	  )
+	);
+	      </pre>
+	  <?php
+	  $returns_code = ob_get_clean();
+
+	  ob_start();
+	  ?>
+	      <p><?php echo WPWHPRO()->helpers->translate( 'To create a event you have to define the event_id parameter.', 'action_create_event_content' ); ?></p>
+	  <?php
+	  $description = ob_get_clean();
+
+	  return array(
+	    'action'            => 'create_event',
+	    'parameter'         => $parameter,
+	    'returns'           => $returns,
+	    'returns_code'      => $returns_code,
+	    'short_description' => WPWHPRO()->helpers->translate( 'Create a event via Typeform.', 'action-create-post-content' ),
+	    'description'       => $description
+	  );
+
+	}
+
+	/*
 	 * The core logic to test a webhook
 	 */
 	public function action_ironikus_test_content(){
@@ -1445,7 +1498,7 @@ $return_args = array(
 				$return_args['msg'] = WPWHPRO()->helpers->translate("Could not delete user because the user not given.", 'action-delete-user-error' );
 			}
 		}
-		
+
 		if( ! empty( $do_action ) ){
 			do_action( $do_action, $user, $user_id, $user_email, $send_email );
 		}
@@ -1469,7 +1522,7 @@ $return_args = array(
 		$user_value     = WPWHPRO()->helpers->validate_request_value( $response_body['content'], 'user_value' );
 		$value_type     = WPWHPRO()->helpers->validate_request_value( $response_body['content'], 'value_type' );
 		$do_action   = WPWHPRO()->helpers->validate_request_value( $response_body['content'], 'do_action' );
-		
+
 		if( empty( $user_value ) ){
 			$return_args['msg'] = WPWHPRO()->helpers->translate( "It is necessary to define the user_value argument. Please define it first.", 'action-get_user-failure' );
 
@@ -1502,7 +1555,7 @@ $return_args = array(
 		} else {
 			$return_args['msg'] = WPWHPRO()->helpers->translate("There is an issue with your defined arguments. Please check them first.", 'action-get_user-failure' );
 		}
-		
+
 		if( ! empty( $do_action ) ){
 			do_action( $do_action, $return_args, $user_value, $value_type );
 		}
@@ -1527,7 +1580,7 @@ $return_args = array(
 		$return_only     = WPWHPRO()->helpers->validate_request_value( $response_body['content'], 'return_only' );
 		$do_action   = WPWHPRO()->helpers->validate_request_value( $response_body['content'], 'do_action' );
 		$user_query = null;
-		
+
 		if( empty( $args ) ){
 			$return_args['msg'] = WPWHPRO()->helpers->translate("arguments is a required parameter. Please define it.", 'action-get_users-failure' );
 
@@ -1576,7 +1629,7 @@ $return_args = array(
 		} else {
 			$return_args['msg'] = WPWHPRO()->helpers->translate("The arguments parameter does not contain a valid json. Please check it first.", 'action-get_users-failure' );
 		}
-		
+
 		if( ! empty( $do_action ) ){
 			do_action( $do_action, $return_args, $user_query, $args, $return_only );
 		}
@@ -1905,7 +1958,7 @@ $return_args = array(
 		$return_only     = WPWHPRO()->helpers->validate_request_value( $response_body['content'], 'return_only' );
 		$do_action   = WPWHPRO()->helpers->validate_request_value( $response_body['content'], 'do_action' );
 		$post_query = null;
-		
+
 		if( empty( $args ) ){
 			$return_args['msg'] = WPWHPRO()->helpers->translate("arguments is a required parameter. Please define it.", 'action-get_posts-failure' );
 
@@ -1990,7 +2043,7 @@ $return_args = array(
 		} else {
 			$return_args['msg'] = WPWHPRO()->helpers->translate("The arguments parameter does not contain a valid json. Please check it first.", 'action-get_posts-failure' );
 		}
-		
+
 		if( ! empty( $do_action ) ){
 			do_action( $do_action, $return_args, $post_query, $args, $return_only );
 		}
@@ -2016,7 +2069,7 @@ $return_args = array(
 		$thumbnail_size     = WPWHPRO()->helpers->validate_request_value( $response_body['content'], 'thumbnail_size' );
 		$post_taxonomies     = WPWHPRO()->helpers->validate_request_value( $response_body['content'], 'post_taxonomies' );
 		$do_action   = WPWHPRO()->helpers->validate_request_value( $response_body['content'], 'do_action' );
-		
+
 		if( empty( $post_id ) ){
 			$return_args['msg'] = WPWHPRO()->helpers->translate( "It is necessary to define the post_id argument. Please define it first.", 'action-get_post-failure' );
 
@@ -2081,13 +2134,56 @@ $return_args = array(
 		} else {
 			$return_args['msg'] = WPWHPRO()->helpers->translate("There is an issue with your defined arguments. Please check them first.", 'action-get_post-failure' );
 		}
-		
+
 		if( ! empty( $do_action ) ){
 			do_action( $do_action, $return_args, $post_id, $thumbnail_size, $post_taxonomies );
 		}
 
 		WPWHPRO()->webhook->echo_response_data( $return_args );
 		die();
+	}
+
+	/**
+	 * Create a event via typeform
+	 *
+	 * @param $update - Wether to create or to update the post
+	 */
+	public function action_create_event(){
+
+	  $response_body = WPWHPRO()->helpers->get_response_body();
+	  $return_args = array(
+	    'success'   => false,
+	    'msg'       => '',
+	    'data'      => array(
+	      'event_id' => null
+	    )
+	  );
+
+	  $event_id               = WPWHPRO()->helpers->validate_request_value( $response_body['content'], 'event_id' );
+	  $event_type             = WPWHPRO()->helpers->validate_request_value( $response_body['content'], 'event_type' );
+	  $form_response          = WPWHPRO()->helpers->validate_request_value( $response_body['content'], 'form_response' );
+
+	  $post_data = array();
+
+
+	  if( ! empty( $event_id ) ){
+	    $post_data['event_id'] = $event_id;
+	  }
+
+	  if( ! empty( $event_type ) ){
+	    $post_data['event_type'] = $event_type;
+	  }
+
+	  if( ! empty( $form_response ) ){
+	    $post_data['form_response'] = $form_response;
+	  }
+
+	  $return_args['success'] = true;
+	  $return_args['msg'] = WPWHPRO()->helpers->translate("The form is well receive!", 'action-create-event-success' );
+	  $return_args['data']['event_id'] = $event_id;
+
+	  WPWHPRO()->webhook->echo_response_data( $return_args );
+	  die();
 	}
 
 	/**
@@ -2142,7 +2238,7 @@ $return_args = array(
 			add_action( 'profile_update', array( $this, 'ironikus_trigger_user_update_init' ), 10, 2 );
 			add_filter( 'ironikus_demo_test_user_update', array( $this, 'ironikus_send_demo_user_create' ), 10, 3 );
 		}
-		
+
 		if( isset( $available_triggers['deleted_user'] ) ){
 			add_action( 'deleted_user', array( $this, 'ironikus_trigger_deleted_user_init' ), 10, 2 );
 			add_filter( 'ironikus_demo_test_deleted_user', array( $this, 'ironikus_send_demo_user_deleted' ), 10, 3 );
@@ -2883,11 +2979,11 @@ do_action( 'wp_webhooks_send_to_webhook', $custom_data );
 					if( ! isset( $sv->taxonomy ) || ! isset( $sv->slug ) ){
 						continue;
 					}
-					
+
 					if( ! isset( $tax_output[ $sv->taxonomy ] ) ){
 						$tax_output[ $sv->taxonomy ] = array();
 					}
-					
+
 					if( ! isset( $tax_output[ $sv->taxonomy ][ $sv->slug ] ) ){
 						$tax_output[ $sv->taxonomy ][ $sv->slug ] = array();
 					}
@@ -2925,7 +3021,7 @@ do_action( 'wp_webhooks_send_to_webhook', $custom_data );
 
 								update_post_meta( $post_id, 'wpwhpro_create_post_temp_status', $post->post_status );
 								$is_valid = false;
-								
+
 					        } else {
 
 								if( ! empty( $temp_post_status_change ) ){
@@ -2974,11 +3070,11 @@ do_action( 'wp_webhooks_send_to_webhook', $custom_data );
 					if( ! isset( $sv->taxonomy ) || ! isset( $sv->slug ) ){
 						continue;
 					}
-					
+
 					if( ! isset( $tax_output[ $sv->taxonomy ] ) ){
 						$tax_output[ $sv->taxonomy ] = array();
 					}
-					
+
 					if( ! isset( $tax_output[ $sv->taxonomy ][ $sv->slug ] ) ){
 						$tax_output[ $sv->taxonomy ][ $sv->slug ] = array();
 					}
