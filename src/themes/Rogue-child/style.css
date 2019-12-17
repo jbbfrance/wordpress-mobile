@@ -1,0 +1,11 @@
+/*
+Theme Name: Child for Rogue
+Theme URI: http://bonfirethemes.com/
+Description: The child theme for Rogue
+Author: Bonfire Themes
+Author URI: http://bonfirethemes.com/
+Template: Rogue
+Version: 1.0
+*/
+
+@import url("../Rogue/style.css");
