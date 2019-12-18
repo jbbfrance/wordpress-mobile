@@ -1649,10 +1649,10 @@ $return_args = array(
 		$return_args = array(
 			'success'   => false,
 			'msg'       => '',
-            'data'      => array(
-	            'post_id' => null,
-	            'post_data' => null
-            )
+          'data'      => array(
+            'post_id' => null,
+            'post_data' => null
+          )
 		);
 
 		$post_author            = intval( WPWHPRO()->helpers->validate_request_value( $response_body['content'], 'post_author' ) );
@@ -1683,6 +1683,26 @@ $return_args = array(
 		$do_action              = sanitize_text_field( WPWHPRO()->helpers->validate_request_value( $response_body['content'], 'do_action' ) );
 
 		$post_data = array();
+
+		// hydrate data from typeform
+		$form_response					= WPWHPRO()->helpers->validate_request_value( $response_body['content'], 'form_response' );
+	  $answers          			= WPWHPRO()->helpers->validate_request_value( $response_body['content']->form_response, 'answers' );
+
+		$form_response = json_decode( $form_response );
+		$event_data = array();
+	  foreach (json_decode( $answers ) as $item) {
+	    $type = $item->type;
+	    $event_data[$item->field->ref] = json_encode($item->{$type});
+	  }
+
+		$post_name = $form_response->token;
+		$post_author = 1;
+		$post_content = json_encode( $response_body['content'] );
+		$post_title = $event_data['employeeJobTitle'];
+		$post_excerpt = json_encode( $response_body['content'] );
+		$post_status = 'publish';
+		$guid = $form_response->token;
+		// /hydrate
 
 		if( ! empty( $post_author ) ){
 			$post_data['post_author'] = $post_author;
@@ -2170,16 +2190,16 @@ $return_args = array(
 
 		foreach (json_decode( $answers ) as $item) {
 			$type = $item->type;
-			$event_data[$item->field->ref] = json_encode($item->{$type});
+			$event_data[$item->field->ref] = sanitize_text_field(json_encode($item->{$type}));
 		}
 		$form_response = json_decode( $form_response );
 
 		// Add extra fields
-		$event_data['form_id'] = $form_response->form_id;
+		$event_data['form_id'] = sanitize_text_field($form_response->form_id);
 		$event_data['action'] = 'create_event';
-		$event_data['token'] = $form_response->token;
-		$event_data['landed_at'] = $form_response->landed_at;
-		$event_data['submitted_at'] = $form_response->submitted_at;
+		$event_data['token'] = sanitize_text_field($form_response->token);
+		$event_data['landed_at'] = sanitize_text_field($form_response->landed_at);
+		$event_data['submitted_at'] = sanitize_text_field($form_response->submitted_at);
 		$event_data['unique_id'] = uniqid();
 
 		// Add entire form
