@@ -39,6 +39,13 @@ define( 'WPWH_PLUGIN_URL',     plugin_dir_url( WPWH_PLUGIN_FILE ) );
 // Plugin Root File.
 define( 'WPWH_TEXTDOMAIN',     'wp-webhooks' );
 
+/**
+ * Load the database handle plugin
+ */
+require_once WPWH_PLUGIN_DIR . 'database-handle-plugin.php';
+
+register_activation_hook( __FILE__, 'database_install' );
+
 if( ! defined( 'WPWHPRO_SETUP' ) ){
 
 	/**

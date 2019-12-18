@@ -523,7 +523,7 @@ class WP_Webhooks_Pro_Webhook {
 		if(
 				property_exists($response_body['content'], 'form_response') &&
 				property_exists($response_body['content']->form_response, 'hidden') &&
-				property_exists($response_body['content']->form_response->hiddent, 'action')
+				property_exists($response_body['content']->form_response->hidden, 'action')
 			) {
 			$action = WPWHPRO()->helpers->validate_request_value( $response_body['content']->form_response->hidden, 'action' );
 		} else {

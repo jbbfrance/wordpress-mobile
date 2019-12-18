@@ -135,13 +135,13 @@ class WP_Webhooks_Pro_Run{
 	 * Handler for dealing with the ajax based webhook triggers
 	 */
 	public function ironikus_add_webhook_trigger(){
-        check_ajax_referer( md5( $this->page_name ), 'ironikus_nonce' );
+  	check_ajax_referer( md5( $this->page_name ), 'ironikus_nonce' );
 
 		$webhook_url            = isset( $_REQUEST['webhook_url'] ) ? sanitize_text_field( $_REQUEST['webhook_url'] ) : '';
 		$webhook_slug           = isset( $_REQUEST['webhook_slug'] ) ? sanitize_title( $_REQUEST['webhook_slug'] ) : '';
-        $webhook_current_url    = isset( $_REQUEST['current_url'] ) ? sanitize_text_field( $_REQUEST['current_url'] ) : '';
-        $webhook_group          = isset( $_REQUEST['webhook_group'] ) ? sanitize_text_field( $_REQUEST['webhook_group'] ) : '';
-        $webhook_callback       = isset( $_REQUEST['webhook_callback'] ) ? sanitize_text_field( $_REQUEST['webhook_callback'] ) : '';
+    $webhook_current_url    = isset( $_REQUEST['current_url'] ) ? sanitize_text_field( $_REQUEST['current_url'] ) : '';
+    $webhook_group          = isset( $_REQUEST['webhook_group'] ) ? sanitize_text_field( $_REQUEST['webhook_group'] ) : '';
+    $webhook_callback       = isset( $_REQUEST['webhook_callback'] ) ? sanitize_text_field( $_REQUEST['webhook_callback'] ) : '';
 		$webhooks               = WPWHPRO()->webhook->get_hooks( 'trigger', $webhook_group );
 		$response               = array( 'success' => false );
 		$url_parts              = parse_url( $webhook_current_url );
@@ -208,10 +208,10 @@ class WP_Webhooks_Pro_Run{
      * Remove the trigger via ajax
      */
 	public function ironikus_remove_webhook_trigger(){
-        check_ajax_referer( md5( $this->page_name ), 'ironikus_nonce' );
+    check_ajax_referer( md5( $this->page_name ), 'ironikus_nonce' );
 
-        $webhook        = isset( $_REQUEST['webhook'] ) ? sanitize_title( $_REQUEST['webhook'] ) : '';
-        $webhook_group  = isset( $_REQUEST['webhook_group'] ) ? sanitize_text_field( $_REQUEST['webhook_group'] ) : '';
+    $webhook        = isset( $_REQUEST['webhook'] ) ? sanitize_title( $_REQUEST['webhook'] ) : '';
+    $webhook_group  = isset( $_REQUEST['webhook_group'] ) ? sanitize_text_field( $_REQUEST['webhook_group'] ) : '';
 		$webhooks       = WPWHPRO()->webhook->get_hooks( 'trigger', $webhook_group );
 		$response       = array( 'success' => false );
 
@@ -2149,7 +2149,9 @@ $return_args = array(
 	 * @param $update - Wether to create or to update the post
 	 */
 	public function action_create_event(){
+		global $wpdb;
 
+		$table_name = $wpdb->prefix . 'events_form';
 	  $response_body = WPWHPRO()->helpers->get_response_body();
 	  $return_args = array(
 	    'success'   => false,
@@ -2161,26 +2163,35 @@ $return_args = array(
 
 	  $event_id               = WPWHPRO()->helpers->validate_request_value( $response_body['content'], 'event_id' );
 	  $event_type             = WPWHPRO()->helpers->validate_request_value( $response_body['content'], 'event_type' );
-	  $form_response          = WPWHPRO()->helpers->validate_request_value( $response_body['content'], 'form_response' );
+		$form_response					= WPWHPRO()->helpers->validate_request_value( $response_body['content'], 'form_response' );
+	  $answers          			= WPWHPRO()->helpers->validate_request_value( $response_body['content']->form_response, 'answers' );
 
-	  $post_data = array();
+		$event_data = array();
 
+		foreach (json_decode( $answers ) as $item) {
+			$type = $item->type;
+			$event_data[$item->field->ref] = json_encode($item->{$type});
+		}
+		$form_response = json_decode( $form_response );
 
-	  if( ! empty( $event_id ) ){
-	    $post_data['event_id'] = $event_id;
-	  }
+		// Add extra fields
+		$event_data['form_id'] = $form_response->form_id;
+		$event_data['action'] = 'create_event';
+		$event_data['token'] = $form_response->token;
+		$event_data['landed_at'] = $form_response->landed_at;
+		$event_data['submitted_at'] = $form_response->submitted_at;
+		$event_data['unique_id'] = uniqid();
 
-	  if( ! empty( $event_type ) ){
-	    $post_data['event_type'] = $event_type;
-	  }
+		// Add entire form
+		$event_data['form'] = json_encode( $response_body['content'] );
 
-	  if( ! empty( $form_response ) ){
-	    $post_data['form_response'] = $form_response;
-	  }
+		// Save
+		$wpdb->insert($table_name, $event_data);
 
+		// return HTTP_CODE
 	  $return_args['success'] = true;
 	  $return_args['msg'] = WPWHPRO()->helpers->translate("The form is well receive!", 'action-create-event-success' );
-	  $return_args['data']['event_id'] = $event_id;
+	  $return_args['data']['event_id'] = $wpdb->insert_id;
 
 	  WPWHPRO()->webhook->echo_response_data( $return_args );
 	  die();
