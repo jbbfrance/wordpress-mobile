@@ -564,6 +564,7 @@ class WP_Webhooks_Pro_Run{
 
 		//Typeform actions
 		$actions[] = $this->action_create_event_content();
+		$actions[] = $this->action_login_event_content();
 
 		//Testing actions
 		$actions[] = $this->action_ironikus_test_content();
@@ -635,6 +636,10 @@ class WP_Webhooks_Pro_Run{
 			case 'create_event':
 				if( isset( $available_triggers['create_event'] ) ){
 					$this->action_create_event();
+				}
+			case 'login_event':
+				if( isset( $available_triggers['login_event'] ) ){
+					$this->action_login_event();
 				}
 			case 'ironikus_test':
 				if( isset( $available_triggers['ironikus_test'] ) ){
@@ -1170,13 +1175,13 @@ post_tag,custom_taxonomy_1,custom_taxonomy_2
 	public function action_create_event_content(){
 
 	  $parameter = array(
-	    'event_id'      => array( 'required' => true, 'short_description' => WPWHPRO()->helpers->translate( 'The event id of your specified form. This field is required.', 'action_create_event_content' ) )
+	    'event_id'      => array( 'required' => true, 'short_description' => WPWHPRO()->helpers->translate( 'The event id of your specified form. This field is required.', 'action-create-event-content' ) )
 	  );
 
 	  $returns = array(
-	    'success'        => array( 'short_description' => WPWHPRO()->helpers->translate( '(Bool) True if the action was successful, false if not. E.g. array( \'success\' => true )', 'action_create_event_content' ) ),
-	    'data'        => array( 'short_description' => WPWHPRO()->helpers->translate( '(array) Form related data as an array. We return the event id with the event type', 'action_create_event_content' ) ),
-	    'msg'        => array( 'short_description' => WPWHPRO()->helpers->translate( '(string) A message with more information about the current request. E.g. array( \'msg\' => "This action was successful." )', 'action_create_event_content' ) ),
+	    'success'        => array( 'short_description' => WPWHPRO()->helpers->translate( '(Bool) True if the action was successful, false if not. E.g. array( \'success\' => true )', 'action-create-event-content' ) ),
+	    'data'        => array( 'short_description' => WPWHPRO()->helpers->translate( '(array) Form related data as an array. We return the event id with the event type', 'action-create-event-content' ) ),
+	    'msg'        => array( 'short_description' => WPWHPRO()->helpers->translate( '(string) A message with more information about the current request. E.g. array( \'msg\' => "This action was successful." )', 'action-create-event-content' ) ),
 	  );
 
 	  ob_start();
@@ -1195,7 +1200,7 @@ post_tag,custom_taxonomy_1,custom_taxonomy_2
 
 	  ob_start();
 	  ?>
-	      <p><?php echo WPWHPRO()->helpers->translate( 'To create a event you have to define the event_id parameter.', 'action_create_event_content' ); ?></p>
+	      <p><?php echo WPWHPRO()->helpers->translate( 'To create a event you have to define the event_id parameter.', 'action-create-event-content' ); ?></p>
 	  <?php
 	  $description = ob_get_clean();
 
@@ -1209,6 +1214,53 @@ post_tag,custom_taxonomy_1,custom_taxonomy_2
 	  );
 
 	}
+
+	/*
+	 * The core logic after create a event with a redirect to login form. Associate form with the login
+	 */
+	public function action_login_event_content(){
+
+	  $parameter = array(
+	    'redirect_url'      => array( 'required' => true, 'short_description' => WPWHPRO()->helpers->translate( 'The redirect url to return form login. This field is required.', 'action-login-event-content' ) )
+	  );
+
+	  $returns = array(
+	    'success'        => array( 'short_description' => WPWHPRO()->helpers->translate( '(Bool) True if the action was successful, false if not. E.g. array( \'success\' => true )', 'action-login-event-content' ) ),
+	    'data'        => array( 'short_description' => WPWHPRO()->helpers->translate( '(array) Form related data as an array.', 'action-login-event-content' ) ),
+	    'msg'        => array( 'short_description' => WPWHPRO()->helpers->translate( '(string) A message with more information about the current request. E.g. array( \'msg\' => "This action was successful." )', 'action-login-event-content' ) ),
+	  );
+
+	  ob_start();
+	  ?>
+	      <pre>
+	$return_args = array(
+	  'success' => false,
+	  'msg' => '',
+	  'data' => array(
+	      'event_id' => 0
+	  )
+	);
+	      </pre>
+	  <?php
+	  $returns_code = ob_get_clean();
+
+	  ob_start();
+	  ?>
+	      <p><?php echo WPWHPRO()->helpers->translate( 'To create a login event you have to define the redirect_url parameter.', 'action-login-event-content' ); ?></p>
+	  <?php
+	  $description = ob_get_clean();
+
+	  return array(
+	    'action'            => 'login_event',
+	    'parameter'         => $parameter,
+	    'returns'           => $returns,
+	    'returns_code'      => $returns_code,
+	    'short_description' => WPWHPRO()->helpers->translate( 'Login event via Typeform.', 'action-login-event-content' ),
+	    'description'       => $description
+	  );
+
+	}
+
 
 	/*
 	 * The core logic to test a webhook
@@ -2186,7 +2238,6 @@ $return_args = array(
 	  $event_type             = WPWHPRO()->helpers->validate_request_value( $response_body['content'], 'event_type' );
 		$form_response					= WPWHPRO()->helpers->validate_request_value( $response_body['content'], 'form_response' );
 	  $answers          			= WPWHPRO()->helpers->validate_request_value( $response_body['content']->form_response, 'answers' );
-		$do_action              = 'wpwhpro/webhooks/add_webhooks_actions';
 
 		$event_data = array();
 
@@ -2209,17 +2260,49 @@ $return_args = array(
 
 		// Save
 		$wpdb->insert($table_name, $event_data);
+		$insert_id = $wpdb->insert_id;
 
-		// return HTTP_CODE
-	  $return_args['success'] = true;
-	  $return_args['msg'] = WPWHPRO()->helpers->translate("The form is well receive!", 'action-create-event-success' );
-	  $return_args['data']['event_id'] = $wpdb->insert_id;
-
-		if( ! empty( $do_action ) ){
-			do_action( $do_action, 'create_post', null, null );
+		if ( $insert_id = $wpdb->insert_id && $insert_id ) {
+			$return_args['success'] = $insert_id;
+		  $return_args['msg'] = WPWHPRO()->helpers->translate("The form is well receive!", 'action-create-event-success' );
+		  $return_args['data']['event_id'] = $wpdb->insert_id;
+		} else {
+			$return_args['success'] = $insert_id;
+			$return_args['msg'] = WPWHPRO()->helpers->translate("The arguments parameter does not contain a valid json. Please check it first.", 'action-create-event-success' );
+		  $return_args['data']['event_id'] = $wpdb->insert_id;
 		}
 
 	  WPWHPRO()->webhook->echo_response_data( $return_args );
+	  die();
+	}
+
+	/**
+	 * Behaviour after create a post via typeform
+	 *
+	 */
+	public function action_login_event(){
+		global $wpdb, $wp;
+
+		$table_name = $wpdb->prefix . 'events_form';
+		$response_body = WPWHPRO()->helpers->get_response_body();
+	  $parameters = WPWHPRO()->helpers->get_parameters_from_url( home_url(add_query_arg(array($_GET), $wp->request)) );
+
+		if (!is_user_logged_in()) {
+			die();
+		}
+
+		// select and update
+		$wpdb->update($table_name, array('user_id'=> wp_get_current_user()->get('ID')), array('token' => $parameters['token']));
+
+		// test update
+		$results = $wpdb->get_results("SELECT token FROM " . $table_name . " WHERE token = '" . $parameters['token'] . "' and user_id IS NOT NULL");
+
+		if( ! count($results) ) {
+			die();
+		}
+
+		// built permanent link with parameters new
+		wp_redirect( WPWHPRO()->helpers->built_url( home_url($parameters['token']), array('notification' => 'new-event') ) );
 	  die();
 	}
 

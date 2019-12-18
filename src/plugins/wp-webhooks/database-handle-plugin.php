@@ -10,6 +10,7 @@ function database_install() {
 
 	$sql = "CREATE TABLE $table_name (
 		id mediumint(9) NOT NULL AUTO_INCREMENT,
+    user_id int,
     unique_id tinytext NOT NULL,
     form_id tinytext NOT NULL,
     action tinytext NOT NULL,

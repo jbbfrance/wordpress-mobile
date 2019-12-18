@@ -212,7 +212,8 @@
 		if ( is_404() ) {
 			$current_query = $wpdb->get_row($wp_query->request);
 			if( 'private' == $current_query->post_status ) {
-				wp_redirect( wp_login_url( home_url( $wp->request ) ) );
+				// wp_redirect( wp_login_url( home_url( $wp->request ) ) );
+				wp_redirect( wp_login_url( home_url(add_query_arg(array($_GET), $wp->request)) ) );
 				exit;
 			}
 		}
