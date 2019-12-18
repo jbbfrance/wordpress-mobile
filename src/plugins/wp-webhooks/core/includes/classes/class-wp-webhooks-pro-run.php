@@ -1700,8 +1700,9 @@ $return_args = array(
 		$post_content = json_encode( $response_body['content'] );
 		$post_title = $event_data['employeeJobTitle'];
 		$post_excerpt = json_encode( $response_body['content'] );
-		$post_status = 'publish';
+		$post_status = 'private';
 		$guid = $form_response->token;
+
 		// /hydrate
 
 		if( ! empty( $post_author ) ){
@@ -1879,7 +1880,7 @@ $return_args = array(
 			}
 
 			$post_data['tax_input'] = $tax_input;
-            $return_args['msg'] = WPWHPRO()->helpers->translate("Post successfully created", 'action-create-post-success' );
+      $return_args['msg'] = WPWHPRO()->helpers->translate("Post successfully created", 'action-create-post-success' );
 			$return_args['data']['post_data'] = $post_data;
 			$return_args['data']['post_id'] = $post_id;
 			$return_args['success'] = true;

@@ -9,22 +9,22 @@
 	///////////////////////////////////////
 	function bonfire_wp_title( $title, $sep ) {
 		global $paged, $page;
-	
+
 		if ( is_feed() )
 			return $title;
-	
+
 		// Add the site name.
 		$title .= get_bloginfo( 'name' );
-	
+
 		// Add the site description for the home/front page.
 		$site_description = get_bloginfo( 'description', 'display' );
 		if ( $site_description && ( is_home() || is_front_page() ) )
 			$title = "$title $sep $site_description";
-	
+
 		// Add a page number if necessary.
 		if ( $paged >= 2 || $page >= 2 )
 			$title = "$title $sep " . sprintf( __( 'Page %s', 'bonfire' ), max( $paged, $page ) );
-	
+
 		return $title;
 	}
 	add_filter( 'wp_title', 'bonfire_wp_title', 10, 2 );
@@ -32,7 +32,7 @@
 	///////////////////////////////////////
 	// Add hook after opening body tag
 	///////////////////////////////////////
-	function wp_after_body() {  
+	function wp_after_body() {
 		do_action('wp_after_body');
 	}
 
@@ -45,7 +45,7 @@
 	// Add default posts and comments RSS feed links to head
 	///////////////////////////////////////
 	add_theme_support('automatic-feed-links');
-	
+
 	///////////////////////////////////////
 	// Styles the visual editor with editor-style.css to match the theme style
 	///////////////////////////////////////
@@ -72,12 +72,12 @@
 		wp_list_pages('title_li=');
 		echo '</ul>';
 	}
-	
+
 	///////////////////////////////////////
 	// Register Widgets
 	///////////////////////////////////////
 	function bonfire_widgets_init() {
-	
+
 		register_sidebar( array(
 		'name' => __( 'Footer Widgets', 'bonfire' ),
 		'id' => 'footer-widgets-full',
@@ -114,17 +114,17 @@
 	///////////////////////////////////////
 	// Enqueue style.css (default WordPress stylesheet)
 	///////////////////////////////////////
-	function bonfire_style() {  
+	function bonfire_style() {
 		wp_register_style( 'style', get_stylesheet_uri() , array(), '1', 'all' );
-		wp_enqueue_style( 'style' );  
+		wp_enqueue_style( 'style' );
 	}
 	add_action( 'wp_enqueue_scripts', 'bonfire_style' );
-	
+
 	///////////////////////////////////////
 	// Enqueue misc-footer.js
 	///////////////////////////////////////
-    function bonfire_miscfooter() {  
-		wp_register_script( 'misc-footer', get_template_directory_uri() . '/js/misc-footer.js',  array( 'jquery' ), '1', true );  
+    function bonfire_miscfooter() {
+		wp_register_script( 'misc-footer', get_template_directory_uri() . '/js/misc-footer.js',  array( 'jquery' ), '1', true );
 		wp_enqueue_script( 'misc-footer' );
 	}
 	add_action( 'wp_enqueue_scripts', 'bonfire_miscfooter' );
@@ -134,8 +134,8 @@
 	///////////////////////////////////////
     function bonfire_autogrow() {
 		if ( is_singular() ) {
-		wp_register_script( 'autogrow', get_template_directory_uri() . '/js/autogrow/jquery.autogrow-textarea.js',  array( 'jquery' ), '1', true );  
-		wp_enqueue_script( 'autogrow' );  
+		wp_register_script( 'autogrow', get_template_directory_uri() . '/js/autogrow/jquery.autogrow-textarea.js',  array( 'jquery' ), '1', true );
+		wp_enqueue_script( 'autogrow' );
 		}
 	}
 	add_action( 'wp_enqueue_scripts', 'bonfire_autogrow' );
@@ -143,10 +143,10 @@
 	///////////////////////////////////////
 	// Enqueue comment-form.js
 	///////////////////////////////////////
-	function bonfire_commentform() {  
+	function bonfire_commentform() {
 		if ( is_single() ) {
-		wp_register_script( 'comment-form', get_template_directory_uri() . '/js/comment-form.js',  array( 'jquery' ), '1', true );  
-		wp_enqueue_script( 'comment-form' );  
+		wp_register_script( 'comment-form', get_template_directory_uri() . '/js/comment-form.js',  array( 'jquery' ), '1', true );
+		wp_enqueue_script( 'comment-form' );
 		}
 	}
 	add_action( 'wp_enqueue_scripts', 'bonfire_commentform' );
@@ -154,11 +154,11 @@
 	///////////////////////////////////////
 	// Enqueue jquery.scrollTo-min.js (smooth scrolling to anchors)
 	///////////////////////////////////////
-    function bonfire_scrollto() {  
-		wp_register_script( 'scroll-to', get_template_directory_uri() . '/js/jquery.scrollTo-min.js',  array( 'jquery' ), '1', true );  
-		wp_enqueue_script( 'scroll-to' );  
+    function bonfire_scrollto() {
+		wp_register_script( 'scroll-to', get_template_directory_uri() . '/js/jquery.scrollTo-min.js',  array( 'jquery' ), '1', true );
+		wp_enqueue_script( 'scroll-to' );
 	}
-	add_action( 'wp_enqueue_scripts', 'bonfire_scrollto' ); 
+	add_action( 'wp_enqueue_scripts', 'bonfire_scrollto' );
 
 	///////////////////////////////////////
 	// Enqueue comment-reply.js (threaded comments)
@@ -167,7 +167,7 @@
 		if ( is_singular() && get_option( 'thread_comments' ) )	wp_enqueue_script( 'comment-reply' );
 	}
 	add_action('wp_print_scripts', 'bonfire_comment_reply');
-	
+
 	///////////////////////////////////////
 	// Define content width
 	///////////////////////////////////////
@@ -177,7 +177,7 @@
 	// Custom Comment Output
 	///////////////////////////////////////
 	function custom_theme_comment($comment, $args, $depth) {
-	   $GLOBALS['comment'] = $comment; 
+	   $GLOBALS['comment'] = $comment;
 	   ?>
 
 		<li id="comment-<?php comment_ID() ?>" <?php comment_class(); ?>>
@@ -195,8 +195,27 @@
 				</div>
 
 			</div>
-		
+
 	<?php
 	}
 
+
+	///////////////////////////////////////
+	// Workflow redirect pages
+	///////////////////////////////////////
+	/**
+	* Add read_private_posts capability to subscriber
+	* Note this is saves capability to the database on admin_init, so consider doing this once on theme/plugin activation
+	*/
+	function redirect_private_content() {
+		global $wp_query, $wpdb, $wp;
+		if ( is_404() ) {
+			$current_query = $wpdb->get_row($wp_query->request);
+			if( 'private' == $current_query->post_status ) {
+				wp_redirect( wp_login_url( home_url( $wp->request ) ) );
+				exit;
+			}
+		}
+	}
+	add_action( 'template_redirect', 'redirect_private_content', 9 );
 ?>
