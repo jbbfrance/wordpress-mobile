@@ -2186,6 +2186,7 @@ $return_args = array(
 	  $event_type             = WPWHPRO()->helpers->validate_request_value( $response_body['content'], 'event_type' );
 		$form_response					= WPWHPRO()->helpers->validate_request_value( $response_body['content'], 'form_response' );
 	  $answers          			= WPWHPRO()->helpers->validate_request_value( $response_body['content']->form_response, 'answers' );
+		$do_action              = 'wpwhpro/webhooks/add_webhooks_actions';
 
 		$event_data = array();
 
@@ -2213,6 +2214,10 @@ $return_args = array(
 	  $return_args['success'] = true;
 	  $return_args['msg'] = WPWHPRO()->helpers->translate("The form is well receive!", 'action-create-event-success' );
 	  $return_args['data']['event_id'] = $wpdb->insert_id;
+
+		if( ! empty( $do_action ) ){
+			do_action( $do_action, 'create_post', null, null );
+		}
 
 	  WPWHPRO()->webhook->echo_response_data( $return_args );
 	  die();
