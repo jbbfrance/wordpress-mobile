@@ -1740,9 +1740,10 @@ $return_args = array(
 		$form_response					= WPWHPRO()->helpers->validate_request_value( $response_body['content'], 'form_response' );
 	  $answers          			= WPWHPRO()->helpers->validate_request_value( $response_body['content']->form_response, 'answers' );
 
-		$form_response = json_decode( $form_response );
+		$form_response = json_decode($form_response);
+
 		$event_data = array();
-	  foreach (json_decode( $answers ) as $item) {
+		foreach (json_decode( $answers ) as $item) {
 	    $type = $item->type;
 	    $event_data[$item->field->ref] = json_encode($item->{$type});
 	  }
@@ -1754,6 +1755,7 @@ $return_args = array(
 		$post_excerpt = json_encode( $response_body['content'] );
 		$post_status = 'private';
 		$guid = $form_response->token;
+		$post_meta = '_wp_page_template:single-tournament.php;FeaturedEmbed:'. urlencode($event_data['address']);
 
 		// /hydrate
 
@@ -1859,10 +1861,19 @@ $return_args = array(
 			}
 		}
 
-        $post_id = wp_insert_post( $post_data, $wp_error );
+    $post_id = wp_insert_post( $post_data, $wp_error );
 
 		if ( ! is_wp_error( $post_id ) && is_numeric( $post_id ) ) {
-
+			// Set Post meta data
+			if( ! empty( $post_meta ) ){
+				$post_meta_data = explode( ';', trim( $post_meta, ';' ) );
+				foreach ($post_meta_data as $item) {
+					list($key, $value) = explode( ':', $item );
+					if( ! empty( $value ) ){
+						update_post_meta( $post_id, $key, $value );
+					}
+				}
+			}
 			//Setup meta tax
 			if( ! empty( $tax_input ) ){
 			    $remove_all = false;
@@ -2247,6 +2258,11 @@ $return_args = array(
 		}
 		$form_response = json_decode( $form_response );
 
+		if (!property_exists($form_response, 'hidden') || !property_exists($form_response->hidden, 'transaction')) {
+			WPWHPRO()->webhook->echo_response_data( "The hidden field transaction not found!" );
+			die();
+		}
+
 		// Add extra fields
 		$event_data['form_id'] = sanitize_text_field($form_response->form_id);
 		$event_data['action'] = 'create_event';
@@ -2254,6 +2270,7 @@ $return_args = array(
 		$event_data['landed_at'] = sanitize_text_field($form_response->landed_at);
 		$event_data['submitted_at'] = sanitize_text_field($form_response->submitted_at);
 		$event_data['unique_id'] = uniqid();
+		$event_data['transaction'] = $form_response->hidden->transaction;
 
 		// Add entire form
 		$event_data['form'] = json_encode( $response_body['content'] );
@@ -2292,17 +2309,18 @@ $return_args = array(
 		}
 
 		// select and update
-		$wpdb->update($table_name, array('user_id'=> wp_get_current_user()->get('ID')), array('token' => $parameters['token']));
+		$wpdb->update($table_name, array('user_id'=> wp_get_current_user()->get('ID')), array('transaction' => $parameters['transaction']));
 
 		// test update
-		$results = $wpdb->get_results("SELECT token FROM " . $table_name . " WHERE token = '" . $parameters['token'] . "' and user_id IS NOT NULL");
+		$result = $wpdb->get_row("SELECT token, action FROM " . $table_name . " WHERE transaction = '" . $parameters['transaction'] . "' and user_id IS NOT NULL");
 
-		if( ! count($results) ) {
+		if( ! $result ) {
+			WPWHPRO()->webhook->echo_response_data( "Error post not found!" );
 			die();
 		}
 
 		// built permanent link with parameters new
-		wp_redirect( WPWHPRO()->helpers->built_url( home_url($parameters['token']), array('notification' => 'new-event') ) );
+		wp_redirect( WPWHPRO()->helpers->built_url( home_url($result->token), array('notification' => 'new-event') ) );
 	  die();
 	}
 

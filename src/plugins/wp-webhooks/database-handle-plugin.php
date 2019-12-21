@@ -11,6 +11,7 @@ function database_install() {
 	$sql = "CREATE TABLE $table_name (
 		id mediumint(9) NOT NULL AUTO_INCREMENT,
     user_id int,
+    transaction varchar(30) NOT NULL,
     unique_id tinytext NOT NULL,
     form_id tinytext NOT NULL,
     action tinytext NOT NULL,
@@ -26,9 +27,11 @@ function database_install() {
     qualityOfWork tinyint NULL,
     jobKnowledge tinyint NULL,
     communicationSkills tinyint NULL,
+    address text NULL,
     form text DEFAULT '' NOT NULL,
 
-		PRIMARY KEY  (id)
+    PRIMARY KEY  (id),
+    CONSTRAINT uc_transaction UNIQUE (transaction)
 	) $charset_collate;";
 
 	require_once( ABSPATH . 'wp-admin/includes/upgrade.php' );
