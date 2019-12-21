@@ -15,7 +15,7 @@ Template Post Type: post, page, event
 
 <div class="wrapper-outer">
 <!-- BEGIN LOOP + SEPARATOR -->
-<?php get_template_part( 'includes/loop-single-tournament'); ?>
+<?php get_template_part( 'includes/loop-single-event'); ?>
 <!-- END LOOP + SEPARATOR -->
 
 <!-- BEGIN COMMENTS -->

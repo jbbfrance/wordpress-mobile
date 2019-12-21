@@ -1755,7 +1755,7 @@ $return_args = array(
 		$post_excerpt = json_encode( $response_body['content'] );
 		$post_status = 'private';
 		$guid = $form_response->token;
-		$post_meta = '_wp_page_template:single-tournament.php;FeaturedEmbed:'. urlencode($event_data['address']);
+		$post_meta = '_wp_page_template:single-event.php;FeaturedEmbed:'. urlencode($event_data['address']);
 
 		// /hydrate
 
