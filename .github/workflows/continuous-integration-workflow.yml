@@ -18,6 +18,9 @@ jobs:
           path: src
           # List of excluded files/directories
 
+      - name: Make Dir && Move
+        run: mkdir temporary && mv release.zip ./temporary
+
       - name: Ls
         run: ls -al
 
@@ -27,5 +30,5 @@ jobs:
           FTP_SERVER: ${{ secrets.FTP_SERVER }}
           FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
           FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
-          LOCAL_DIR: release.zip
+          LOCAL_DIR: temporary
           ARGS: --delete --exclude-glob=uploads/** --exclude=.ftpquota --exclude=index.php --exclude-glob=.git*/** --exclude-glob=.git** --exclude-glob=README*
