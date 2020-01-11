@@ -1,0 +1,24 @@
+name: Publish Website
+on:
+  push:
+    branches:
+    - master
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    name: FTP-Deploy-Action
+    steps:
+      - uses: actions/checkout@master
+
+      - name: Ls
+        run: ls -al
+
+      - name: FTP-Deploy-Action
+        uses: SamKirkland/FTP-Deploy-Action@2.0.0
+        env:
+          FTP_SERVER: ${{ secrets.FTP_OVH_HOST }}
+          FTP_USERNAME: ${{ secrets.FTP_OVH_USERNAME }}
+          FTP_PASSWORD: ${{ secrets.FTP_OVH_PASSWORD }}
+          REMOTE_DIR: www
+          ARGS: --exclude=.ftpquota --exclude-glob=.git*/** --exclude-glob=.git** --exclude-glob=README*
