@@ -9,16 +9,23 @@ jobs:
     runs-on: ubuntu-latest
     name: FTP-Deploy-Action
     steps:
-      - uses: actions/checkout@master
+      - name: Checkout master
+        uses: actions/checkout@master
+
+      - name: Zip Release
+        uses: TheDoctor0/zip-release@v0.2.1
+        with:
+          path: src
+          # List of excluded files/directories
 
       - name: Ls
         run: ls -al
-
-      - name: FTP-Deploy-Action
-        uses: SamKirkland/FTP-Deploy-Action@2.0.0
-        env:
-          FTP_SERVER: ${{ secrets.FTP_SERVER }}
-          FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
-          FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
-          LOCAL_DIR: src
-          ARGS: --delete --exclude-glob=uploads/** --exclude=.ftpquota --exclude=index.php --exclude-glob=.git*/** --exclude-glob=.git** --exclude-glob=README*
+      #
+      # - name: FTP-Deploy-Action
+      #   uses: SamKirkland/FTP-Deploy-Action@2.0.0
+      #   env:
+      #     FTP_SERVER: ${{ secrets.FTP_SERVER }}
+      #     FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
+      #     FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+      #     LOCAL_DIR: src
+      #     ARGS: --delete --exclude-glob=uploads/** --exclude=.ftpquota --exclude=index.php --exclude-glob=.git*/** --exclude-glob=.git** --exclude-glob=README*
